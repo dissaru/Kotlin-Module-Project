@@ -1,38 +1,49 @@
 import java.util.Scanner
 
-class Menu(private val title: String) {
-    private val options = mutableListOf<Pair<String, () -> Unit>>()
+open class Menu(private val title: String) {
+    private val menuItems = mutableListOf<Pair<String, () -> Unit>>()
     private val scanner = Scanner(System.`in`)
 
-    fun addOption(label: String, action: () -> Unit) {
-        options.add(label to action)
+    fun addMenuItem(text: String, action: () -> Unit) {
+        menuItems.add(text to action)
     }
 
-    fun show() {
+    open fun run() {
         while (true) {
-            println(title)
-            options.forEachIndexed { index, pair ->
-                println("${index + 1}: ${pair.first}")
+            display()
+            val input = getInput()
+            if (!handleInput(input)) {
+                break
             }
-            println("0: Выход")
-
-            val choice = readChoice(0, options.size)
-            if (choice == 0) break
-
-            options[choice - 1].second()
         }
     }
 
-    private fun readChoice(min: Int, max: Int): Int {
+    private fun display() {
+        println("\n$title:")
+        menuItems.forEachIndexed { index, item -> println("${index + 1}. ${item.first}") }
+        println("0. Выход")
+    }
+
+    private fun getInput(): Int {
         while (true) {
-            println("Выберите пункт меню (от $min до $max):")
-            val input = scanner.nextLine()
-            val choice = input.toIntOrNull()
-            if (choice != null && choice in min..max) {
-                return choice
-            } else {
-                println("Неправильный ввод. Пожалуйста, введите цифру от $min до $max.")
+            print("Введите ваш выбор: ")
+            try {
+                return scanner.nextLine().toInt()
+            } catch (e: NumberFormatException) {
+                println("Ошибка: введите число")
             }
         }
+    }
+
+    private fun handleInput(input: Int): Boolean {
+        if (input == 0) {
+            return false;
+        }
+        if (input > menuItems.size || input < 1) {
+            println("Ошибка: неверный ввод")
+            return true
+        }
+        menuItems[input - 1].second()
+        return true
     }
 }

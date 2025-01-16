@@ -1,62 +1,102 @@
+import java.util.Scanner
+
 class NotesApp {
-    private val archives: MutableList<Archive> = mutableListOf()
-
-    fun start() {
-        val mainMenu = Menu("Меню архивов")
-        mainMenu.addOption("Создать архив") { createArchive() }
-        mainMenu.addOption("Посмотреть архивы") { showArchives() }
-        mainMenu.show()
+    fun run() {
+        val archiveMenu = ArchiveMenu(this)
+        archiveMenu.run()
     }
 
-    private fun createArchive() {
-        println("Введите название архива:")
-        val name = readLine()?.takeIf { it.isNotBlank() } ?: run {
-            println("Название архива не должно быть пустым!")
-            return
-        }
-        archives.add(Archive(name))
-        println("Архив '$name' создан.")
-    }
+    inner class ArchiveMenu(private val notesApp: NotesApp, title: String = "Список архивов") : Menu(title) {
+        private val archives = mutableListOf<Archive>()
 
-    private fun showArchives() {
-        if (archives.isEmpty()) {
-            println("Нет доступных архивов.")
-            return
+        init {
+            addMenuItem("Создать архив") { createArchive() }
+            addMenuItem("Выбрать архив") { selectArchive() }
         }
 
-        val archiveMenu = Menu("Список архивов")
-        archives.forEach { archive ->
-            archiveMenu.addOption(archive.name) { showNotes(archive) }
-        }
-        archiveMenu.show()
-    }
-
-    private fun showNotes(archive: Archive) {
-        val notesMenu = Menu("Заметки для архива '${archive.name}'")
-        notesMenu.addOption("Создать заметку") { createNote(archive) }
-
-        if (archive.notes.isNotEmpty()) {
-            archive.notes.forEach { note ->
-                notesMenu.addOption(note.text) { showNoteText(note) }
+        private fun createArchive() {
+            while (true) {
+                print("Введите имя архива: ")
+                val name = readLine()
+                if (!name.isNullOrEmpty()) {
+                    archives.add(Archive(name))
+                    println("Архив '$name' создан")
+                    return
+                } else {
+                    println("Имя архива не может быть пустым!")
+                }
             }
         }
 
-        notesMenu.show()
-    }
+        private fun selectArchive() {
+            if (archives.isEmpty()) {
+                println("Нет доступных архивов. Пожалуйста, создайте архив.")
+                return
+            }
 
-    private fun createNote(archive: Archive) {
-        println("Введите текст заметки:")
-        val text = readLine()?.takeIf { it.isNotBlank() } ?: run {
-            println("Текст заметки не должен быть пустым!")
-            return
+            val selectArchiveMenu = Menu("Выберите архив:")
+            archives.forEachIndexed { index, archive ->
+                selectArchiveMenu.addMenuItem("${index + 1}. ${archive.name}") {
+                    println("Выбран архив '${archive.name}'")
+                    val noteMenu = NoteMenu(notesApp,archive, this)
+                    noteMenu.run()
+                }
+            }
+            selectArchiveMenu.run()
         }
-        archive.notes.add(Note(text))
-        println("Заметка сохранена.")
     }
 
-    private fun showNoteText(note: Note) {
-        println("Заметка: ${note.text}")
-        println("Нажмите Enter, чтобы вернуться.")
-        readLine()
+    inner class NoteMenu(private val notesApp: NotesApp, private val archive: Archive, private val returnMenu: Menu, title: String = "Список заметок архива ") : Menu(title + archive.name) {
+        private val notes = mutableListOf<Note>()
+        init {
+            addMenuItem("Создать заметку") { createNote() }
+            addMenuItem("Выбрать заметку") { selectNote() }
+        }
+
+        private fun createNote() {
+            while (true) {
+                print("Введите имя заметки: ")
+                val name = readLine()
+                if (name.isNullOrEmpty()) {
+                    println("Имя заметки не может быть пустым!")
+                    continue // Продолжаем цикл, если имя пустое
+                }
+                while (true) {
+                    print("Введите текст заметки: ")
+                    val text = readLine()
+                    if (text.isNullOrEmpty()) {
+                        println("Текст заметки не может быть пустым!")
+                        continue// Продолжаем цикл, если текст пустой
+                    }
+                    notes.add(Note(name, text))
+                    println("Заметка '$name' создана")
+                    return // Возвращаемся в меню заметок
+                }
+            }
+        }
+
+
+        private fun selectNote() {
+            if (notes.isEmpty()) {
+                println("Нет доступных заметок в этом архиве. Пожалуйста, создайте заметку.")
+                return
+            }
+            val selectNoteMenu = Menu("Выберите заметку:")
+            notes.forEachIndexed { index, note ->
+                selectNoteMenu.addMenuItem("${index + 1}. ${note.name}") {
+                    println("Выбранна заметка: '${note.name}'")
+                    displayNote(note)
+                }
+            }
+            selectNoteMenu.run()
+        }
+
+        private fun displayNote(note: Note) {
+            println("-------------------")
+            println("Заметка: ${note.name}")
+            println("-------------------")
+            println(note.text)
+            println("-------------------")
+        }
     }
 }

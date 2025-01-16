@@ -1,4 +1,4 @@
 fun main() {
-    val app = NotesApp()
-    app.start()
+    val notesApp = NotesApp()
+    notesApp.run()
 }
